@@ -1,40 +1,91 @@
+use std::{
+    fmt::Display,
+    str::{self, FromStr},
+};
+
+#[derive(Debug, PartialEq, Eq)]
 struct ChunkType {
-    data: [u8; 4]
+    data: [u8; 4],
 }
 
+#[derive(Debug)]
+struct ParseChunkError;
+
 impl ChunkType {
-    fn bytes(self: Self) -> [i32; 4] {
-        [0, 0, 0, 0]
+    fn bytes(self: Self) -> [u8; 4] {
+        self.data
+    }
+
+    fn is_valid(self: Self) -> bool {
+        self.data.iter().filter(|s| !is_alphabet(s)).count() == 0 && self.data[2] <= 90
+    }
+
+    fn is_critical(self: Self) -> bool {
+        self.data[0] <= 90
+    }
+
+    fn is_public(self: Self) -> bool {
+        self.data[1] <= 90
+    }
+
+    fn is_reserved_bit_valid(self: Self) -> bool {
+        self.data[2] <= 90
+    }
+
+    fn is_safe_to_copy(self: Self) -> bool {
+        self.data[3] > 90
     }
 }
 
-fn is_alphabet(value: u8) -> bool {
+fn is_alphabet(value: &u8) -> bool {
     let lower_a = 'a' as u8;
     let lower_z = 'z' as u8;
     let higher_a = 'A' as u8;
     let higher_z = 'Z' as u8;
 
-    return if value >= lower_a && value <= lower_z {
+    return if *value >= lower_a && *value <= lower_z {
         true
-    } else if value >= higher_a && value <= higher_z {
+    } else if *value >= higher_a && *value <= higher_z {
         true
     } else {
         false
-    }
+    };
 }
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = &'static str;
+    type Error = ParseChunkError;
     fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
         // check if value is alphabetical
-        for c in value {
-            if !is_alphabet(c) {
-                return Err("Value contains non alphabetical character");
-            }
+        match value.into_iter().filter(|s| !is_alphabet(s)).count() {
+            0 => Ok(ChunkType { data: value }),
+            _ => Err(ParseChunkError {}),
         }
-        Ok(ChunkType { data: value })
     }
-    
 }
+
+impl FromStr for ChunkType {
+    type Err = ParseChunkError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != 4 {
+            return Err(ParseChunkError {});
+        }
+        let mut chunks_real: [u8; 4] = [0; 4];
+        let chunks = s.as_bytes();
+        for (idx, c) in chunks.iter().enumerate() {
+            chunks_real[idx] = *c;
+        }
+        match chunks_real.iter().filter(|s| !is_alphabet(s)).count() {
+            0 => Ok(ChunkType { data: chunks_real }),
+            _ => Err(ParseChunkError {}),
+        }
+    }
+}
+
+impl Display for ChunkType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", String::from_utf8(self.data.into()).unwrap())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
