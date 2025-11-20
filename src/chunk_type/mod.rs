@@ -4,15 +4,15 @@ use std::{
 };
 
 #[derive(Debug, PartialEq, Eq)]
-struct ChunkType {
-    data: [u8; 4],
+pub struct ChunkType {
+    pub data: [u8; 4],
 }
 
 #[derive(Debug)]
-struct ParseChunkError;
+pub struct ParseChunkTypeError;
 
 impl ChunkType {
-    fn bytes(self: Self) -> [u8; 4] {
+    pub fn bytes(self: Self) -> [u8; 4] {
         self.data
     }
 
@@ -52,21 +52,21 @@ fn is_alphabet(value: &u8) -> bool {
     };
 }
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = ParseChunkError;
+    type Error = ParseChunkTypeError;
     fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
         // check if value is alphabetical
         match value.into_iter().filter(|s| !is_alphabet(s)).count() {
             0 => Ok(ChunkType { data: value }),
-            _ => Err(ParseChunkError {}),
+            _ => Err(ParseChunkTypeError {}),
         }
     }
 }
 
 impl FromStr for ChunkType {
-    type Err = ParseChunkError;
+    type Err = ParseChunkTypeError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() != 4 {
-            return Err(ParseChunkError {});
+            return Err(ParseChunkTypeError {});
         }
         let mut chunks_real: [u8; 4] = [0; 4];
         let chunks = s.as_bytes();
@@ -75,7 +75,7 @@ impl FromStr for ChunkType {
         }
         match chunks_real.iter().filter(|s| !is_alphabet(s)).count() {
             0 => Ok(ChunkType { data: chunks_real }),
-            _ => Err(ParseChunkError {}),
+            _ => Err(ParseChunkTypeError {}),
         }
     }
 }
