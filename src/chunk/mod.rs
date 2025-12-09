@@ -1,6 +1,6 @@
 use crate::chunk_type::ChunkType;
 use crc;
-use std::{char::ParseCharError, fmt::Display, string::FromUtf8Error};
+use std::{fmt::Display, string::FromUtf8Error};
 
 pub struct Chunk {
     length: u32,
@@ -9,6 +9,9 @@ pub struct Chunk {
     crc: u32,
 }
 impl Chunk {
+    pub const CHUNK_TYPE_SIZE: u8 = 4;
+    pub const CRC_SIZE: u8 = 4;
+    pub const LENGTH_SIZE: u8 = 4;
     pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Self {
         let chunk_type = chunk_type.bytes();
         let chunk_data: Vec<u8> = chunk_type.iter().chain(data.iter()).cloned().collect();
@@ -54,7 +57,7 @@ impl TryFrom<&[u8]> for Chunk {
     type Error = ChunkParseError;
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         // TODO: check if value is larger than 2^31
-        const MIN_SIZE: usize = 4 + 4 + 4;
+        const MIN_SIZE: usize = (Chunk::LENGTH_SIZE+Chunk::CHUNK_TYPE_SIZE+Chunk::CRC_SIZE) as usize;
         if value.len() < MIN_SIZE {
             return Err(ChunkParseError);
         }
@@ -85,7 +88,13 @@ impl TryFrom<&[u8]> for Chunk {
 }
 impl Display for Chunk {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.data_as_string().unwrap())
+        writeln!(f, "Chunk Length {}", self.length())?;
+        writeln!(f, "Chunk Type {}", self.chunk_type())?;
+        match self.data_as_string() {
+            Ok(value) => writeln!(f, "Chunk Data utf8 {}", value)?,
+            Err(_) => writeln!(f, "Chunk data utf8 lossy {}", String::from_utf8_lossy(&self.as_bytes()))?
+        };
+        writeln!(f, "CRC {}", self.crc())
     }
 }
 #[cfg(test)]
