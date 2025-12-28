@@ -47,7 +47,7 @@ pub struct PrintArgs {
 }
 
 impl EncodeArgs {
-    pub fn handle_encode(self) -> Result<(), Error> {
+    pub fn handle(self) -> Result<(), Error> {
         let png_bin = fs::read(&self.filepath)?;
         let mut png = Png::try_from(png_bin.as_slice())?;
 
@@ -62,6 +62,23 @@ impl EncodeArgs {
         } else {
             fs::write(&self.filepath, png.as_bytes())?;
         }
+        Ok(())
+    }
+}
+
+impl DecodeArgs {
+    pub fn handle(self) -> Result<(), Error> {
+        let png_bin = fs::read(&self.filepath)?;
+        let png = Png::try_from(png_bin.as_slice())?;
+        // let chunk_type = ChunkType::from_str(&self.chunk_type)?;
+        match png.chunk_by_type(&self.chunk_type) {
+            Some(chunk) => {
+                println!("{}", chunk.data_as_string().unwrap());
+            },
+            None => {
+                println!("Chunk not found")
+            }
+        };
         Ok(())
     }
 }

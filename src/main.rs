@@ -5,7 +5,7 @@ mod commands;
 mod png;
 
 use clap::Parser;
-use crate::args::{Args::{self, Decode, Encode, Print, Remove}, EncodeArgs};
+use crate::args::{Args::{self, Decode, Encode, Print, Remove}, DecodeArgs, EncodeArgs};
 
 pub type Error = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Error>;
@@ -21,7 +21,8 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
     match args {
-        Encode(args) => EncodeArgs::handle_encode(args),
+        Encode(args) => EncodeArgs::handle(args),
+        Decode(args) => DecodeArgs::handle(args),
         _ => Ok(())
     }
 }
