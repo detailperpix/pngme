@@ -1,13 +1,39 @@
-use std::fmt::Display;
+use std::error::Error;
+use std::{fmt::Display, str::FromStr};
 
-use crate::chunk::{Chunk, ChunkParseError};
+use crate::{
+    chunk::{Chunk, ChunkParseError},
+    chunk_type::{ChunkType, ParseChunkTypeError},
+};
+
+#[derive(Debug)]
+pub struct ReplaceChunkError;
+
+impl Display for ReplaceChunkError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "There is an error when replacing chunk")
+    }
+}
+
+impl Error for ReplaceChunkError {}
+
+#[derive(Debug)]
+pub struct ChunkNotFoundError;
+
+impl Display for ChunkNotFoundError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Chunk does not exist")
+    }
+}
+
+impl Error for ChunkNotFoundError {}
+
+#[derive(Debug)]
+pub struct ChunkRemoveError;
 
 pub struct Png {
     chunks: Vec<Chunk>,
 }
-
-#[derive(Debug)]
-pub struct ChunkRemoveError;
 
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
@@ -20,14 +46,14 @@ impl Png {
         self.chunks.push(chunk);
     }
 
-    fn _get_chunk_by_type(&self, chunk_type: &str) -> Option<usize> {
+    fn _get_chunk_index(&self, chunk_type: &str) -> Option<usize> {
         self.chunks
             .iter()
             .position(|x| x.chunk_type().data == chunk_type.as_bytes())
     }
 
     pub fn remove_first_chunk(&mut self, chunk_type: &str) -> Result<Chunk, ChunkRemoveError> {
-        let index = match self._get_chunk_by_type(chunk_type) {
+        let index = match self._get_chunk_index(chunk_type) {
             Some(value) => value,
             None => return Err(ChunkRemoveError),
         };
@@ -43,24 +69,31 @@ impl Png {
     }
 
     pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
-        let index = match self._get_chunk_by_type(chunk_type) {
+        let index = match self._get_chunk_index(chunk_type) {
             Some(value) => value,
-            None => return None
+            None => return None,
         };
-        return self.chunks.get(index)
+        return self.chunks.get(index);
     }
 
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut result: Vec<u8> = Vec::from(Self::STANDARD_HEADER);
         for chunk in self.chunks.as_slice() {
             result.extend(chunk.as_bytes().iter());
-        };
+        }
         result
     }
 }
 
 #[derive(Debug)]
 pub struct PngParseError;
+impl Display for PngParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Error in Parsing file as PNG")
+    }
+}
+
+impl std::error::Error for PngParseError {}
 
 impl TryFrom<&[u8]> for Png {
     type Error = PngParseError;
@@ -77,7 +110,7 @@ impl TryFrom<&[u8]> for Png {
         let mut result = Png { chunks: Vec::new() };
         loop {
             if (current + length_size) > value.len() {
-                println!("Break from data length");
+                dbg!("Break from data length");
                 break;
             }
             let length: usize = u32::from_be_bytes(
@@ -88,7 +121,7 @@ impl TryFrom<&[u8]> for Png {
             let total_length: usize = header_size + length + crc_size;
 
             if (current + total_length) > value.len() {
-                println!("Break from total length");
+                dbg!("Break from total length");
                 break;
             }
             let chunk = match Chunk::try_from(value[current..current + total_length].as_ref()) {
@@ -136,7 +169,10 @@ mod tests {
         Png::from_chunks(chunks)
     }
 
-    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk, Box<dyn std::error::Error>> {
+    fn chunk_from_strings(
+        chunk_type: &str,
+        data: &str,
+    ) -> Result<Chunk, Box<dyn std::error::Error>> {
         use std::str::FromStr;
 
         let chunk_type = ChunkType::from_str(chunk_type).unwrap();

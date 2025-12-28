@@ -1,4 +1,5 @@
 use std::{
+    error::Error,
     fmt::Display,
     str::{self, FromStr},
 };
@@ -10,6 +11,17 @@ pub struct ChunkType {
 
 #[derive(Debug)]
 pub struct ParseChunkTypeError;
+
+impl Error for ParseChunkTypeError {}
+
+impl Display for ParseChunkTypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(
+            f,
+            "Failed to parse chunk type, ensure chunk type is in correct format"
+        )
+    }
+}
 
 impl ChunkType {
     pub fn bytes(self: Self) -> [u8; 4] {
