@@ -74,11 +74,37 @@ impl DecodeArgs {
         match png.chunk_by_type(&self.chunk_type) {
             Some(chunk) => {
                 println!("{}", chunk.data_as_string().unwrap());
-            },
+            }
             None => {
                 println!("Chunk not found")
             }
         };
+        Ok(())
+    }
+}
+
+impl RemoveArgs {
+    pub fn handle(self) -> Result<(), Error> {
+        let png_bin = fs::read(&self.filepath)?;
+        let mut png = Png::try_from(png_bin.as_slice())?;
+        match png.remove_first_chunk(&self.chunk_type) {
+            Ok(value) => {
+                fs::write(&self.filepath, png.as_bytes())?;
+                println!("Removed chunk with message {}", value.data_as_string()?);
+            }
+            Err(err) => {
+                println!("{}", err)
+            }
+        }
+        Ok(())
+    }
+}
+
+impl PrintArgs {
+    pub fn handle(self) -> Result<(), Error> {
+        let png_bin = fs::read(&self.filepath)?;
+        let png = Png::try_from(png_bin.as_slice())?;
+        println!("{}", png);
         Ok(())
     }
 }

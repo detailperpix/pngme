@@ -30,6 +30,13 @@ impl Error for ChunkNotFoundError {}
 
 #[derive(Debug)]
 pub struct ChunkRemoveError;
+impl Display for ChunkRemoveError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Chunk does not exist")
+    }
+}
+
+impl Error for ChunkRemoveError {}
 
 pub struct Png {
     chunks: Vec<Chunk>,
