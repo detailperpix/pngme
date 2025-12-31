@@ -4,8 +4,8 @@ use std::{fs, str::FromStr};
 use crate::{
     chunk::Chunk,
     chunk_type::ChunkType,
-    png::{Png, PngParseError},
-    Error,
+    png::Png,
+    Result
 };
 
 #[derive(Parser, Debug)]
@@ -47,7 +47,7 @@ pub struct PrintArgs {
 }
 
 impl EncodeArgs {
-    pub fn handle(self) -> Result<(), Error> {
+    pub fn handle(self) -> Result<()> {
         let png_bin = fs::read(&self.filepath)?;
         let mut png = Png::try_from(png_bin.as_slice())?;
 
@@ -67,7 +67,7 @@ impl EncodeArgs {
 }
 
 impl DecodeArgs {
-    pub fn handle(self) -> Result<(), Error> {
+    pub fn handle(self) -> Result<()> {
         let png_bin = fs::read(&self.filepath)?;
         let png = Png::try_from(png_bin.as_slice())?;
         // let chunk_type = ChunkType::from_str(&self.chunk_type)?;
@@ -84,7 +84,7 @@ impl DecodeArgs {
 }
 
 impl RemoveArgs {
-    pub fn handle(self) -> Result<(), Error> {
+    pub fn handle(self) -> Result<()> {
         let png_bin = fs::read(&self.filepath)?;
         let mut png = Png::try_from(png_bin.as_slice())?;
         match png.remove_first_chunk(&self.chunk_type) {
@@ -101,7 +101,7 @@ impl RemoveArgs {
 }
 
 impl PrintArgs {
-    pub fn handle(self) -> Result<(), Error> {
+    pub fn handle(self) -> Result<()> {
         let png_bin = fs::read(&self.filepath)?;
         let png = Png::try_from(png_bin.as_slice())?;
         println!("{}", png);
